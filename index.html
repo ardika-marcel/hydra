@@ -333,6 +333,22 @@
 const SUPABASE_URL = 'https://luttsqkusdujdapghblv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_YYGGJoppLXjUH1TL-e0hWg_RfxQnKnX';
 const TABLE = 'hydra_logs';
+const LS_KEY = 'hydra-data-local'; // localStorage fallback key
+
+function setSyncStatus(state, label) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = label;
+}
+
+// localStorage helpers (fallback)
+function lsLoad() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { return {}; }
+}
+function lsSave(d) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch(e) {}
+}
 
 // Helper for Supabase REST API calls
 async function sbFetch(method, path, body) {
@@ -347,19 +363,14 @@ async function sbFetch(method, path, body) {
     body: body ? JSON.stringify(body) : undefined
   });
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
+    const errText = await res.text();
+    let parsed;
+    try { parsed = JSON.parse(errText); } catch(e) { parsed = null; }
+    const msg = parsed?.message || parsed?.error || errText || `HTTP ${res.status}`;
+    throw new Error(`[${res.status}] ${msg}`);
   }
-  // Return JSON only for GET
   if (method === 'GET') return res.json();
   return null;
-}
-
-function setSyncStatus(state, label) {
-  const dot = document.getElementById('sync-dot');
-  const lbl = document.getElementById('sync-label');
-  dot.className = 'sync-dot ' + state;
-  lbl.textContent = label;
 }
 
 // ===== DATA =====
@@ -378,7 +389,7 @@ function dateKey(y, m, d) {
   return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 }
 
-// Load all rows from Supabase
+// Load all rows from Supabase, fall back to localStorage
 async function loadData() {
   setSyncStatus('syncing', 'Loading…');
   try {
@@ -387,10 +398,13 @@ async function loadData() {
     for (const row of rows) {
       data[row.log_date] = row.ml_consumed;
     }
+    lsSave(data);
     setSyncStatus('synced', 'Synced');
   } catch(e) {
-    console.error('Load failed:', e);
-    setSyncStatus('error', 'Offline');
+    console.error('Supabase load failed:', e.message);
+    data = lsLoad();
+    const hasLocal = Object.keys(data).length > 0;
+    setSyncStatus('error', hasLocal ? 'Offline (local)' : 'Error: ' + e.message);
   }
   const tk = todayKey();
   currentWater = data[tk] || 0;
@@ -402,10 +416,12 @@ async function upsertRow(dateStr, ml) {
   setSyncStatus('syncing', 'Saving…');
   try {
     await sbFetch('POST', TABLE, { log_date: dateStr, ml_consumed: ml });
+    lsSave(data);
     setSyncStatus('synced', 'Saved ✓');
   } catch(e) {
-    console.error('Save failed:', e);
-    setSyncStatus('error', 'Save failed');
+    // Save to localStorage so data isn’t lost
+    lsSave(data);
+    setSyncStatus('error', 'DB error: ' + e.message);
     throw e;
   }
 }
@@ -414,17 +430,22 @@ async function upsertRow(dateStr, ml) {
 async function deleteRow(dateStr) {
   setSyncStatus('syncing', 'Saving…');
   try {
-    await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?log_date=eq.${dateStr}`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?log_date=eq.${dateStr}`, {
       method: 'DELETE',
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`
       }
     });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`[${res.status}] ${t}`);
+    }
+    lsSave(data);
     setSyncStatus('synced', 'Saved ✓');
   } catch(e) {
-    console.error('Delete failed:', e);
-    setSyncStatus('error', 'Save failed');
+    lsSave(data);
+    setSyncStatus('error', 'DB error: ' + e.message);
   }
 }
 
@@ -503,7 +524,18 @@ async function saveToday() {
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 2500);
   } catch(e) {
-    alert('Could not save to Supabase. Check your connection.');
+    // Data is saved to localStorage as fallback
+    const toast = document.getElementById('toast');
+    toast.style.background = '#f87171';
+    toast.style.color = '#450a0a';
+    toast.textContent = '⚠️ Saved locally only — ' + e.message;
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+      // Reset toast style
+      setTimeout(() => { toast.style.background=''; toast.style.color=''; toast.textContent='✓ Saved!'; }, 500);
+    }, 6000);
+    console.error('saveToday error:', e.message);
   }
 }
 
