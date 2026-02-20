@@ -55,6 +55,22 @@
     margin-right: auto;
     letter-spacing: -0.5px;
   }
+  .sync-indicator {
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sync-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  .sync-dot.connected { background: var(--success); box-shadow: 0 0 6px var(--success); }
+  .sync-dot.syncing { background: #fbbf24; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
   .nav-btn {
     padding: 8px 20px;
     border: 1px solid var(--border);
@@ -69,30 +85,10 @@
   .nav-btn:hover { color: var(--water); border-color: var(--water); }
   .nav-btn.active { background: var(--water); color: var(--bg); border-color: var(--water); font-weight: 500; }
 
-  /* Sync status indicator */
-  .sync-status {
-    font-size: 0.75rem;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 8px;
-  }
-  .sync-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--muted);
-    transition: background 0.3s;
-  }
-  .sync-dot.synced { background: var(--success); }
-  .sync-dot.syncing { background: #fbbf24; animation: pulse 1s infinite; }
-  .sync-dot.error { background: #f87171; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
   .page { display: none; position: relative; z-index:1; }
   .page.active { display: block; }
 
-  /* PAGE 1 */
+  /* PAGE 1: BOTTLE */
   #page-bottle {
     display: none;
     flex-direction: column;
@@ -112,61 +108,31 @@
   .amount-display { font-family: 'Playfair Display', serif; font-size: 2.5rem; color: var(--water); text-align: center; line-height: 1; }
   .amount-display span { font-size: 1rem; color: var(--muted); font-family: 'DM Sans', sans-serif; }
   .controls { display: flex; flex-direction: column; gap: 10px; justify-content: center; }
-  .ml-btn {
-    width: 90px; padding: 10px;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; color: var(--text);
-    font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
-    cursor: pointer; transition: all 0.2s; text-align: center;
-  }
+  .ml-btn { width: 90px; padding: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; text-align: center; }
   .ml-btn:hover { background: var(--water); color: var(--bg); border-color: var(--water); transform: translateX(4px); }
   .ml-btn.add { border-color: rgba(56,189,248,0.4); }
   .bottle-actions { display: flex; gap: 12px; margin-top: 10px; }
-  .action-btn {
-    padding: 10px 24px; border-radius: 100px; border: none;
-    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
-    cursor: pointer; transition: all 0.2s; font-weight: 500;
-  }
+  .action-btn { padding: 10px 24px; border-radius: 100px; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; font-weight: 500; }
   .btn-save { background: var(--water); color: var(--bg); }
   .btn-save:hover { background: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px var(--water-glow); }
   .btn-reset { background: transparent; color: var(--muted); border: 1px solid var(--border); }
   .btn-reset:hover { color: #f87171; border-color: #f87171; }
-  .saved-toast {
-    position: fixed; bottom: 30px; left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--success); color: #022c22;
-    padding: 12px 28px; border-radius: 100px;
-    font-weight: 500; font-size: 0.9rem;
-    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); z-index: 999;
-  }
+  .saved-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--success); color: #022c22; padding: 12px 28px; border-radius: 100px; font-weight: 500; font-size: 0.9rem; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); z-index: 999; }
   .saved-toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* PAGE 2 */
+  /* PAGE 2: CALENDAR */
   #page-calendar { display: none; padding: 40px 20px 60px; max-width: 800px; margin: 0 auto; }
   #page-calendar.active { display: block; }
   .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
   .cal-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--text); }
   .cal-nav { display: flex; gap: 8px; }
-  .cal-nav-btn {
-    width: 40px; height: 40px; border: 1px solid var(--border);
-    background: var(--card); color: var(--text); border-radius: 10px;
-    cursor: pointer; font-size: 1.1rem; transition: all 0.2s;
-  }
+  .cal-nav-btn { width: 40px; height: 40px; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 10px; cursor: pointer; font-size: 1.1rem; transition: all 0.2s; }
   .cal-nav-btn:hover { background: var(--water); color: var(--bg); }
   .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 8px; }
   .cal-weekday { text-align: center; font-size: 0.75rem; color: var(--muted); font-weight: 500; padding: 8px 0; letter-spacing: 0.05em; text-transform: uppercase; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-  .cal-day {
-    aspect-ratio: 1; border-radius: 12px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    cursor: pointer; border: 1px solid transparent; transition: all 0.2s;
-    background: var(--card); position: relative; overflow: hidden;
-  }
-  .cal-day::before {
-    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-    background: linear-gradient(to top, var(--water), transparent);
-    opacity: 0.3; height: 0%; transition: height 0.4s;
-  }
+  .cal-day { aspect-ratio: 1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; background: var(--card); position: relative; overflow: hidden; }
+  .cal-day::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, var(--water), transparent); opacity: 0.3; height: 0%; transition: height 0.4s; }
   .cal-day.has-data::before { height: var(--fill-pct); }
   .cal-day:hover { border-color: var(--water); transform: scale(1.05); }
   .cal-day.empty { background: transparent; cursor: default; border: none; }
@@ -175,11 +141,7 @@
   .cal-day.selected { border-color: var(--water); background: rgba(56,189,248,0.15); }
   .day-num { font-size: 0.95rem; font-weight: 500; z-index: 1; color: var(--text); }
   .day-ml { font-size: 0.65rem; color: var(--water); z-index: 1; margin-top: 2px; }
-  .day-detail {
-    margin-top: 28px; padding: 24px; background: var(--card);
-    border: 1px solid var(--border); border-radius: 20px; display: none;
-    animation: slideUp 0.3s ease;
-  }
+  .day-detail { margin-top: 28px; padding: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; display: none; animation: slideUp 0.3s ease; }
   .day-detail.show { display: block; }
   @keyframes slideUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
   .detail-date { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 16px; color: var(--accent); }
@@ -189,7 +151,7 @@
   .detail-bar-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--water-dark), var(--water)); transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); }
   .detail-note { margin-top: 10px; font-size: 0.82rem; color: var(--muted); }
 
-  /* PAGE 3 */
+  /* PAGE 3: STATS */
   #page-stats { display: none; padding: 40px 20px 60px; max-width: 900px; margin: 0 auto; }
   #page-stats.active { display: block; }
   .stats-header { margin-bottom: 36px; }
@@ -209,13 +171,13 @@
 
 <nav>
   <div class="logo">💧 Hydra</div>
+  <div class="sync-indicator">
+    <div class="sync-dot" id="sync-dot"></div>
+    <span id="sync-label">Connecting…</span>
+  </div>
   <button class="nav-btn active" onclick="showPage('bottle',this)">Today</button>
   <button class="nav-btn" onclick="showPage('calendar',this)">Calendar</button>
   <button class="nav-btn" onclick="showPage('stats',this)">Statistics</button>
-  <div class="sync-status">
-    <div class="sync-dot" id="sync-dot"></div>
-    <span id="sync-label">—</span>
-  </div>
 </nav>
 
 <!-- PAGE 1: BOTTLE -->
@@ -292,13 +254,8 @@
     </div>
   </div>
   <div class="cal-weekdays">
-    <div class="cal-weekday">Sun</div>
-    <div class="cal-weekday">Mon</div>
-    <div class="cal-weekday">Tue</div>
-    <div class="cal-weekday">Wed</div>
-    <div class="cal-weekday">Thu</div>
-    <div class="cal-weekday">Fri</div>
-    <div class="cal-weekday">Sat</div>
+    <div class="cal-weekday">Sun</div><div class="cal-weekday">Mon</div><div class="cal-weekday">Tue</div>
+    <div class="cal-weekday">Wed</div><div class="cal-weekday">Thu</div><div class="cal-weekday">Fri</div><div class="cal-weekday">Sat</div>
   </div>
   <div class="cal-grid" id="cal-grid"></div>
   <div class="day-detail" id="day-detail">
@@ -330,54 +287,57 @@
 
 <script>
 // ===== SUPABASE CONFIG =====
-const SUPABASE_URL = 'https://luttsqkusdujdapghblv.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_YYGGJoppLXjUH1TL-e0hWg_RfxQnKnX';
+const SUPABASE_URL = 'https://rulczsxtozyhsdvnaija.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_hT5bkyLYHpx6E60zuj0sfQ_LYWrMq6K';
 const TABLE = 'hydra_logs';
-const LS_KEY = 'hydra-data-local'; // localStorage fallback key
 
-function setSyncStatus(state, label) {
-  const dot = document.getElementById('sync-dot');
-  const lbl = document.getElementById('sync-label');
-  dot.className = 'sync-dot ' + state;
-  lbl.textContent = label;
-}
+// Simple Supabase REST helper
+const sb = {
+  headers: {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  },
 
-// localStorage helpers (fallback)
-function lsLoad() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { return {}; }
-}
-function lsSave(d) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch(e) {}
-}
+  async getAll() {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?select=*`, { headers: this.headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
 
-// Helper for Supabase REST API calls
-async function sbFetch(method, path, body) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method,
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=minimal' : 'return=minimal'
-    },
-    body: body ? JSON.stringify(body) : undefined
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    let parsed;
-    try { parsed = JSON.parse(errText); } catch(e) { parsed = null; }
-    const msg = parsed?.message || parsed?.error || errText || `HTTP ${res.status}`;
-    throw new Error(`[${res.status}] ${msg}`);
+  async upsert(log_date, amount_ml) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+      method: 'POST',
+      headers: { ...this.headers, 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({ log_date, amount_ml })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async delete(log_date) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?log_date=eq.${log_date}`, {
+      method: 'DELETE',
+      headers: this.headers
+    });
+    if (!res.ok) throw new Error(await res.text());
   }
-  if (method === 'GET') return res.json();
-  return null;
-}
+};
 
-// ===== DATA =====
+// ===== STATE =====
 const GOAL = 3000;
-let data = {};
+let data = {};      // { 'YYYY-MM-DD': ml }
 let currentWater = 0;
-let calYear = 2026, calMonth = 1;
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+function setSyncStatus(state) {
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  dot.className = 'sync-dot ' + state;
+  label.textContent = state === 'connected' ? 'Synced' : state === 'syncing' ? 'Syncing…' : 'Offline';
+}
 
 function todayKey() {
   const d = new Date();
@@ -385,68 +345,24 @@ function todayKey() {
 }
 
 function dateKey(y, m, d) {
-  // m is 0-indexed here (JS month), but we store as 1-indexed date string
+  // m is 0-indexed here (JS month)
   return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 }
 
-// Load all rows from Supabase, fall back to localStorage
 async function loadData() {
-  setSyncStatus('syncing', 'Loading…');
+  setSyncStatus('syncing');
   try {
-    const rows = await sbFetch('GET', `${TABLE}?select=log_date,ml_consumed`);
+    const rows = await sb.getAll();
     data = {};
-    for (const row of rows) {
-      data[row.log_date] = row.ml_consumed;
-    }
-    lsSave(data);
-    setSyncStatus('synced', 'Synced');
+    rows.forEach(r => { data[r.log_date] = r.amount_ml; });
+    setSyncStatus('connected');
   } catch(e) {
-    console.error('Supabase load failed:', e.message);
-    data = lsLoad();
-    const hasLocal = Object.keys(data).length > 0;
-    setSyncStatus('error', hasLocal ? 'Offline (local)' : 'Error: ' + e.message);
+    console.error('Load error:', e);
+    setSyncStatus('');
   }
   const tk = todayKey();
   currentWater = data[tk] || 0;
   updateBottle();
-}
-
-// Upsert a single row
-async function upsertRow(dateStr, ml) {
-  setSyncStatus('syncing', 'Saving…');
-  try {
-    await sbFetch('POST', TABLE, { log_date: dateStr, ml_consumed: ml });
-    lsSave(data);
-    setSyncStatus('synced', 'Saved ✓');
-  } catch(e) {
-    // Save to localStorage so data isn’t lost
-    lsSave(data);
-    setSyncStatus('error', 'DB error: ' + e.message);
-    throw e;
-  }
-}
-
-// Delete a row (when resetting to 0)
-async function deleteRow(dateStr) {
-  setSyncStatus('syncing', 'Saving…');
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?log_date=eq.${dateStr}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
-      }
-    });
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`[${res.status}] ${t}`);
-    }
-    lsSave(data);
-    setSyncStatus('synced', 'Saved ✓');
-  } catch(e) {
-    lsSave(data);
-    setSyncStatus('error', 'DB error: ' + e.message);
-  }
 }
 
 // ===== BOTTLE =====
@@ -511,31 +427,24 @@ function resetToday() {
 }
 
 async function saveToday() {
+  setSyncStatus('syncing');
   const tk = todayKey();
   try {
     if (currentWater > 0) {
+      await sb.upsert(tk, currentWater);
       data[tk] = currentWater;
-      await upsertRow(tk, currentWater);
     } else {
+      await sb.delete(tk);
       delete data[tk];
-      await deleteRow(tk);
     }
+    setSyncStatus('connected');
     const toast = document.getElementById('toast');
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 2500);
   } catch(e) {
-    // Data is saved to localStorage as fallback
-    const toast = document.getElementById('toast');
-    toast.style.background = '#f87171';
-    toast.style.color = '#450a0a';
-    toast.textContent = '⚠️ Saved locally only — ' + e.message;
-    toast.classList.add('show');
-    setTimeout(() => {
-      toast.classList.remove('show');
-      // Reset toast style
-      setTimeout(() => { toast.style.background=''; toast.style.color=''; toast.textContent='✓ Saved!'; }, 500);
-    }, 6000);
-    console.error('saveToday error:', e.message);
+    console.error('Save error:', e);
+    setSyncStatus('');
+    alert('Failed to save. Check console for details.');
   }
 }
 
@@ -547,24 +456,25 @@ function renderCalendar() {
   const grid = document.getElementById('cal-grid');
   grid.innerHTML = '';
   document.getElementById('day-detail').classList.remove('show');
+
   const firstDay = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
   const today = new Date();
+
   for (let i = 0; i < firstDay; i++) {
     const el = document.createElement('div');
     el.className = 'cal-day empty';
     grid.appendChild(el);
   }
+
   for (let d = 1; d <= daysInMonth; d++) {
-    // dateKey uses 0-indexed month
     const key = dateKey(calYear, calMonth, d);
     const ml = data[key] || 0;
     const el = document.createElement('div');
     el.className = 'cal-day';
     if (ml > 0) {
       el.classList.add('has-data');
-      const pct = Math.round(Math.min(ml/GOAL, 1)*100);
-      el.style.setProperty('--fill-pct', pct+'%');
+      el.style.setProperty('--fill-pct', Math.round(Math.min(ml/GOAL,1)*100)+'%');
     }
     if (today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === d)
       el.classList.add('today');
@@ -581,17 +491,15 @@ function showDayDetail(d, key, ml, el) {
   detail.classList.add('show');
   document.getElementById('detail-date').textContent = `${monthNames[calMonth]} ${d}, ${calYear}`;
   document.getElementById('detail-amount').innerHTML = `${ml} <span>ml</span>`;
-  const pct = Math.min(ml/GOAL*100,100);
-  document.getElementById('detail-bar-fill').style.width = pct+'%';
-  const note = ml === 0 ? 'No data recorded' : ml >= GOAL ? '🎉 Goal reached!' : `${Math.round(pct)}% of daily goal (${GOAL}ml)`;
-  document.getElementById('detail-note').textContent = note;
+  document.getElementById('detail-bar-fill').style.width = Math.min(ml/GOAL*100,100)+'%';
+  const pct = Math.round(Math.min(ml/GOAL*100,100));
+  document.getElementById('detail-note').textContent = ml === 0 ? 'No data recorded' : ml >= GOAL ? '🎉 Goal reached!' : `${pct}% of daily goal (${GOAL}ml)`;
 }
 
 function changeMonth(dir) {
   calMonth += dir;
   if (calMonth > 11) { calMonth = 0; calYear++; }
   if (calMonth < 0) { calMonth = 11; calYear--; }
-  if (calYear < 2026 || (calYear === 2026 && calMonth < 1)) { calYear = 2026; calMonth = 1; }
   renderCalendar();
 }
 
@@ -600,30 +508,34 @@ let monthChartInstance = null, dailyChartInstance = null;
 
 function renderStats() {
   const allVals = Object.values(data).filter(v => v > 0);
-  const avg = allVals.length ? Math.round(allVals.reduce((a,b) => a+b, 0) / allVals.length) : 0;
+  const avg = allVals.length ? Math.round(allVals.reduce((a,b) => a+b,0)/allVals.length) : 0;
   const best = allVals.length ? Math.max(...allVals) : 0;
   const daysGoal = allVals.filter(v => v >= GOAL).length;
+
   document.getElementById('stats-summary').innerHTML = `
     <div class="stat-card"><div class="stat-label">Days Tracked</div><div class="stat-value">${allVals.length} <span>days</span></div></div>
     <div class="stat-card"><div class="stat-label">Daily Average</div><div class="stat-value">${avg} <span>ml</span></div></div>
     <div class="stat-card"><div class="stat-label">Best Day</div><div class="stat-value">${best} <span>ml</span></div></div>
     <div class="stat-card"><div class="stat-label">Goal Days</div><div class="stat-value">${daysGoal} <span>days</span></div></div>
   `;
-  const months = [], monthAvgs = [];
+
   const now = new Date();
-  let y = 2026, m = 1;
+  const months = [], monthAvgs = [];
+  let y = now.getFullYear(), m = 0;
+  // Start from Jan of current year (or earlier if you have data)
+  const firstKey = Object.keys(data).sort()[0];
+  if (firstKey) { y = parseInt(firstKey.slice(0,4)); m = parseInt(firstKey.slice(5,7))-1; }
   while (y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth())) {
     const days = new Date(y, m+1, 0).getDate();
     const vals = [];
     for (let d = 1; d <= days; d++) {
-      const v = data[dateKey(y, m, d)];
-      if (v) vals.push(v);
+      const v = data[dateKey(y, m, d)]; if (v) vals.push(v);
     }
     months.push(`${monthNames[m].slice(0,3)} ${y}`);
     monthAvgs.push(vals.length ? Math.round(vals.reduce((a,b) => a+b,0)/vals.length) : 0);
-    m++;
-    if (m > 11) { m = 0; y++; }
+    m++; if (m > 11) { m = 0; y++; }
   }
+
   const curMonth = now.getMonth(), curYear = now.getFullYear();
   const daysNow = new Date(curYear, curMonth+1, 0).getDate();
   const dailyLabels = [], dailyVals = [];
@@ -631,47 +543,36 @@ function renderStats() {
     dailyLabels.push(d);
     dailyVals.push(data[dateKey(curYear, curMonth, d)] || 0);
   }
+
   if (monthChartInstance) monthChartInstance.destroy();
   const mCtx = document.getElementById('monthChart').getContext('2d');
   const mGrad = mCtx.createLinearGradient(0,0,0,300);
-  mGrad.addColorStop(0,'rgba(56,189,248,0.3)');
-  mGrad.addColorStop(1,'rgba(56,189,248,0)');
+  mGrad.addColorStop(0,'rgba(56,189,248,0.3)'); mGrad.addColorStop(1,'rgba(56,189,248,0)');
   monthChartInstance = new Chart(mCtx, {
-    type: 'line',
-    data: {
-      labels: months,
-      datasets: [{ label:'Avg ml', data:monthAvgs, borderColor:'#38bdf8', backgroundColor:mGrad, pointBackgroundColor:'#38bdf8', pointRadius:5, tension:0.4, fill:true, borderWidth:2.5 }]
-    },
-    options: chartOptions('Average ml per day')
+    type:'line', data:{ labels:months, datasets:[{ label:'Avg ml', data:monthAvgs, borderColor:'#38bdf8', backgroundColor:mGrad, pointBackgroundColor:'#38bdf8', pointRadius:5, tension:0.4, fill:true, borderWidth:2.5 }] },
+    options: chartOptions()
   });
+
   if (dailyChartInstance) dailyChartInstance.destroy();
   const dCtx = document.getElementById('dailyChart').getContext('2d');
   const dGrad = dCtx.createLinearGradient(0,0,0,280);
-  dGrad.addColorStop(0,'rgba(56,189,248,0.25)');
-  dGrad.addColorStop(1,'rgba(56,189,248,0)');
+  dGrad.addColorStop(0,'rgba(56,189,248,0.25)'); dGrad.addColorStop(1,'rgba(56,189,248,0)');
   dailyChartInstance = new Chart(dCtx, {
-    type: 'line',
-    data: {
-      labels: dailyLabels,
-      datasets: [
-        { label:'ml', data:dailyVals, borderColor:'#7dd3fc', backgroundColor:dGrad, pointBackgroundColor:'#7dd3fc', pointRadius:4, tension:0.4, fill:true, borderWidth:2 },
-        { label:'Goal', data:dailyLabels.map(()=>GOAL), borderColor:'rgba(52,211,153,0.4)', borderDash:[6,4], pointRadius:0, fill:false, borderWidth:1.5 }
-      ]
-    },
-    options: chartOptions('ml consumed')
+    type:'line', data:{ labels:dailyLabels, datasets:[
+      { label:'ml', data:dailyVals, borderColor:'#7dd3fc', backgroundColor:dGrad, pointBackgroundColor:'#7dd3fc', pointRadius:4, tension:0.4, fill:true, borderWidth:2 },
+      { label:'Goal', data:dailyLabels.map(()=>GOAL), borderColor:'rgba(52,211,153,0.4)', borderDash:[6,4], pointRadius:0, fill:false, borderWidth:1.5 }
+    ]},
+    options: chartOptions()
   });
 }
 
-function chartOptions(yLabel) {
+function chartOptions() {
   return {
     responsive:true,
-    plugins:{
-      legend:{display:false},
-      tooltip:{ backgroundColor:'#152952', borderColor:'rgba(56,189,248,0.3)', borderWidth:1, titleColor:'#38bdf8', bodyColor:'#e0f2fe' }
-    },
+    plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#152952', borderColor:'rgba(56,189,248,0.3)', borderWidth:1, titleColor:'#38bdf8', bodyColor:'#e0f2fe' } },
     scales:{
-      x:{ grid:{color:'rgba(56,189,248,0.07)'}, ticks:{color:'#64748b',font:{family:'DM Sans'}}, border:{color:'rgba(56,189,248,0.15)'} },
-      y:{ grid:{color:'rgba(56,189,248,0.07)'}, ticks:{color:'#64748b',font:{family:'DM Sans'}}, border:{color:'rgba(56,189,248,0.15)'} }
+      x:{ grid:{color:'rgba(56,189,248,0.07)'}, ticks:{color:'#64748b', font:{family:'DM Sans'}}, border:{color:'rgba(56,189,248,0.15)'} },
+      y:{ grid:{color:'rgba(56,189,248,0.07)'}, ticks:{color:'#64748b', font:{family:'DM Sans'}}, border:{color:'rgba(56,189,248,0.15)'} }
     }
   };
 }
@@ -695,12 +596,13 @@ function init() {
   const script = document.createElement('script');
   script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
   document.head.appendChild(script);
-  loadData().then(() => { renderCalendar(); });
+  loadData().then(() => renderCalendar());
 }
 
 init();
 </script>
 </body>
 </html>
+
 
 
