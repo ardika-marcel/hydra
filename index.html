@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aqua — Water Tracker</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -372,6 +371,7 @@
   <button onclick="showPage(3)" id="nav3">📈 Statistics</button>
 </nav>
 
+<!-- PAGE 1 -->
 <div class="page active" id="page1">
   <h1 class="bottle-title">Daily Hydration</h1>
   <p class="bottle-subtitle">Click bottle or use slider to log water</p>
@@ -394,25 +394,32 @@
           </linearGradient>
         </defs>
 
+        <!-- Bottle outline -->
         <path d="M55,40 L35,80 L20,100 L20,460 Q20,480 80,480 Q140,480 140,460 L140,100 L125,80 L105,40 Z"
               fill="url(#bottleGrad)" stroke="rgba(56,189,248,0.5)" stroke-width="1.5"/>
 
+        <!-- Water fill -->
         <g clip-path="url(#bottleClip)">
           <rect id="waterRect" x="0" y="480" width="160" height="0" fill="url(#waterGrad)" rx="0">
             <animate attributeName="y" dur="0.5s" fill="freeze" id="waterAnim"/>
             <animate attributeName="height" dur="0.5s" fill="freeze" id="heightAnim"/>
           </rect>
+          <!-- water wave -->
           <path id="wavePath" d="" fill="rgba(125,211,252,0.3)"/>
         </g>
 
+        <!-- ML lines (100ml each = 30px spacing roughly) -->
         <g id="mlLines"></g>
 
+        <!-- Bottle cap -->
         <rect x="62" y="10" width="36" height="32" rx="5" fill="rgba(56,189,248,0.2)" stroke="rgba(56,189,248,0.4)" stroke-width="1"/>
         <rect x="58" y="36" width="44" height="8" rx="2" fill="rgba(56,189,248,0.3)"/>
 
+        <!-- Shine -->
         <path d="M35,100 Q38,120 35,200" stroke="rgba(255,255,255,0.12)" stroke-width="6" fill="none" stroke-linecap="round"/>
       </svg>
 
+      <!-- Labels on right -->
       <div class="bottle-labels" id="bottleLabels"></div>
     </div>
 
@@ -442,6 +449,7 @@
   </div>
 </div>
 
+<!-- PAGE 2 -->
 <div class="page" id="page2">
   <div class="cal-header">
     <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
@@ -451,6 +459,7 @@
   <div class="cal-grid" id="calGrid"></div>
 </div>
 
+<!-- PAGE 3 -->
 <div class="page" id="page3">
   <h1 class="stats-title">Hydration Statistics</h1>
   <p class="stats-sub">Monthly overview</p>
@@ -463,6 +472,7 @@
   <div class="stats-cards" id="statsCards"></div>
 </div>
 
+<!-- Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalIfBg(event)">
   <div class="modal">
     <h3>Water Intake</h3>
@@ -478,30 +488,49 @@
 </div>
 
 <script>
-// ===== SUPABASE INITIALIZATION =====
+// ===== SUPABASE CONFIG =====
 const SUPABASE_URL = 'https://rulczsxtozyhsdvnaija.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_hT5bkyLYHpx6E60zuj0sfQ_LYWrMq6K';
-const supabase = libsupabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ===== DATA =====
-let data = {};
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok && res.status !== 204) {
+    const err = await res.text();
+    console.error('Supabase error:', err);
+    return null;
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
 
-async function loadData() {
-  const { data: dbData, error } = await supabase.from('hydration_logs').select('*');
-  if (!error && dbData) {
-    const formatted = {};
-    dbData.forEach(row => { formatted[row.date] = row.ml; });
-    data = formatted;
-    currentMl = data[todayKey()] || 0;
-    updateBottle(currentMl, false);
-    if (document.getElementById('page2').classList.contains('active')) renderCalendar();
-    if (document.getElementById('page3').classList.contains('active')) renderStats();
+async function loadAllData() {
+  const rows = await sbFetch('water_intake?select=date,ml');
+  if (rows) {
+    rows.forEach(r => { data[r.date] = r.ml; });
   }
 }
 
 async function upsertEntry(date, ml) {
-  await supabase.from('hydration_logs').upsert({ date, ml }, { onConflict: 'date' });
+  await sbFetch('water_intake', {
+    method: 'POST',
+    headers: { 'Prefer': 'resolution=merge-duplicates' },
+    body: JSON.stringify({ date, ml })
+  });
 }
+
+// ===== DATA =====
+let data = {};
+try { data = JSON.parse(localStorage.getItem('aquaData') || '{}'); } catch(e){ data = {}; }
+
+function saveData() { localStorage.setItem('aquaData', JSON.stringify(data)); }
 
 function todayKey() {
   const d = new Date();
@@ -527,7 +556,7 @@ const BOTTLE_TOP = 80;   // y where bottle starts (after neck)
 const BOTTLE_BOT = 465;  // y of bottle bottom
 const BOTTLE_H = BOTTLE_BOT - BOTTLE_TOP;
 
-let currentMl = 0;
+let currentMl = data[todayKey()] || 0;
 
 function initBottle() {
   // Draw ML lines
@@ -536,6 +565,7 @@ function initBottle() {
   for (let i = 1; i <= STEPS; i++) {
     const frac = i / STEPS;
     const y = BOTTLE_BOT - frac * BOTTLE_H;
+    // bottle width varies (tapered at top ~65px wide, bottom ~120px wide)
     const widthFrac = 1 - frac * 0.35;
     const halfW = 60 * widthFrac;
     const isMajor = i % 5 === 0;
@@ -560,7 +590,8 @@ function initBottle() {
     else div.textContent = '';
     labels.appendChild(div);
   }
-  loadData();
+
+  updateBottle(currentMl, false);
 }
 
 function updateBottle(ml, animate = true) {
@@ -575,6 +606,7 @@ function updateBottle(ml, animate = true) {
   const goal = document.getElementById('goalReached');
   goal.style.display = ml >= 2000 ? 'block' : 'none';
 
+  // Update water rect
   const frac = ml / TOTAL;
   const waterH = frac * BOTTLE_H;
   const waterY = BOTTLE_BOT - waterH;
@@ -583,6 +615,7 @@ function updateBottle(ml, animate = true) {
   rect.setAttribute('y', waterY);
   rect.setAttribute('height', waterH + 15);
 
+  // Wave
   if (ml > 0) {
     const wave = document.getElementById('wavePath');
     const waveY = waterY + 2;
@@ -593,6 +626,7 @@ function updateBottle(ml, animate = true) {
     document.getElementById('wavePath').setAttribute('d', '');
   }
 
+  // Update labels highlight
   const filledSteps = Math.floor(ml / 100);
   for (let i = 1; i <= STEPS; i++) {
     const lbl = document.getElementById(`lbl-${i}`);
@@ -605,6 +639,7 @@ function handleBottleClick(e) {
   const rect = svg.getBoundingClientRect();
   const clickY = e.clientY - rect.top;
   const svgH = rect.height;
+  // Map clickY to 0..3000ml (inverted)
   const topFrac = (BOTTLE_TOP / 500);
   const botFrac = (BOTTLE_BOT / 500);
   const relY = (clickY / svgH - topFrac) / (botFrac - topFrac);
@@ -621,20 +656,18 @@ function setFromSlider(v) {
 }
 
 async function saveToday() {
-  const key = todayKey();
-  data[key] = currentMl;
-  await upsertEntry(key, currentMl);
+  data[todayKey()] = currentMl;
+  saveData();
+  await upsertEntry(todayKey(), currentMl);
   const msg = document.getElementById('saveMsg');
   msg.style.display = 'block';
   setTimeout(() => msg.style.display = 'none', 2000);
 }
 
-initBottle();
-
 // ===== PAGE 2: CALENDAR =====
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-let calYear = 2026, calMonth = 1;
+let calYear = 2026, calMonth = 1; // Feb 2026 (0-indexed)
 
 function changeMonth(dir) {
   calMonth += dir;
@@ -648,6 +681,7 @@ function renderCalendar() {
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
 
+  // Day names
   DAYS.forEach(d => {
     const el = document.createElement('div');
     el.className = 'cal-day-name';
@@ -659,6 +693,7 @@ function renderCalendar() {
   const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
   const today = new Date();
 
+  // Empty cells
   for (let i = 0; i < firstDay; i++) {
     const el = document.createElement('div');
     el.className = 'cal-day empty';
@@ -715,7 +750,9 @@ async function saveModal() {
   const ml = parseInt(document.getElementById('modalInput').value) || 0;
   const key = `${modalYear}-${String(modalMonth+1).padStart(2,'0')}-${String(modalDay).padStart(2,'0')}`;
   data[key] = ml;
+  saveData();
   await upsertEntry(key, ml);
+  // If today, update bottle
   if (key === todayKey()) {
     currentMl = ml;
     updateBottle(ml);
@@ -724,10 +761,9 @@ async function saveModal() {
   renderCalendar();
 }
 
-renderCalendar();
-
 // ===== PAGE 3: STATS =====
 function renderStats() {
+  // Build monthly stats
   const today = new Date();
   const months = [];
   for (let i = 5; i >= 0; i--) {
@@ -748,6 +784,7 @@ function renderStats() {
     return { ...m, avg: count > 0 ? Math.round(total/count) : 0, total, count };
   });
 
+  // Draw chart
   const canvas = document.getElementById('lineChart');
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
@@ -766,6 +803,7 @@ function renderStats() {
 
   ctx.clearRect(0, 0, W, H);
 
+  // Grid lines
   for (let i = 0; i <= 4; i++) {
     const y = padT + chartH * (1 - i/4);
     const v = Math.round((maxVal * i/4) / 100) * 100;
@@ -778,13 +816,18 @@ function renderStats() {
     ctx.fillText(v, padL - 8, y + 3);
   }
 
+  // Goal line at 2000
   const goalY = padT + chartH * (1 - 2000/maxVal);
   ctx.strokeStyle = 'rgba(74,222,128,0.25)';
   ctx.setLineDash([4, 4]);
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(padL, goalY); ctx.lineTo(padL + chartW, goalY); ctx.stroke();
   ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(74,222,128,0.5)';
+  ctx.font = '9px DM Mono'; ctx.textAlign = 'left';
+  ctx.fillText('goal 2000ml', padL + 4, goalY - 4);
 
+  // X labels
   monthlyAvgs.forEach((m, i) => {
     const x = padL + (i / (monthlyAvgs.length-1)) * chartW;
     ctx.fillStyle = 'rgba(148,163,184,0.7)';
@@ -792,6 +835,7 @@ function renderStats() {
     ctx.fillText(m.label, x, H - 8);
   });
 
+  // Area fill
   const gradient = ctx.createLinearGradient(0, padT, 0, padT + chartH);
   gradient.addColorStop(0, 'rgba(56,189,248,0.3)');
   gradient.addColorStop(1, 'rgba(56,189,248,0.02)');
@@ -808,6 +852,7 @@ function renderStats() {
   ctx.fillStyle = gradient;
   ctx.fill();
 
+  // Line
   ctx.beginPath();
   ctx.strokeStyle = '#38bdf8';
   ctx.lineWidth = 2.5;
@@ -820,6 +865,7 @@ function renderStats() {
   });
   ctx.stroke();
 
+  // Dots
   monthlyAvgs.forEach((m, i) => {
     const x = padL + (i / (monthlyAvgs.length-1)) * chartW;
     const y = padT + chartH * (1 - m.avg/maxVal);
@@ -838,6 +884,7 @@ function renderStats() {
     }
   });
 
+  // Stats cards
   const cards = document.getElementById('statsCards');
   cards.innerHTML = '';
   const thisMonth = monthlyAvgs[monthlyAvgs.length-1];
@@ -859,6 +906,14 @@ function renderStats() {
       </div>`;
   });
 }
+
+// ===== INIT: Load from Supabase, then initialize =====
+(async () => {
+  await loadAllData();
+  currentMl = data[todayKey()] || 0;
+  initBottle();
+  renderCalendar();
+})();
 </script>
 </body>
 </html>
