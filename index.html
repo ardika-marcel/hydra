@@ -536,18 +536,17 @@ const SUPABASE_URL = 'https://luttsqkusdujdapghblv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_YYGGJoppLXjUH1TL-e0hWg_RfxQnKnX';
 const USER_ID = 'anonymous'; // change to actual user auth id if you add auth later
 
-async function sbFetch(path, options = {}) {
+async function sbFetch(path, method = 'GET', body = null, extraHeaders = {}) {
   const url = `${SUPABASE_URL}/rest/v1${path}`;
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': options.prefer || '',
-      ...(options.headers || {})
-    }
-  });
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    ...extraHeaders
+  };
+  const options = { method, headers };
+  if (body) options.body = JSON.stringify(body);
+  const res = await fetch(url, options);
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`Supabase error: ${res.status} ${err}`);
@@ -581,7 +580,7 @@ async function loadData() {
       });
     }
   } catch(e) {
-    console.warn('Could not load from Supabase, using empty data:', e);
+    console.warn('Could not load from Supabase:', e);
     data = {};
   }
   const tk = todayKey();
@@ -589,27 +588,17 @@ async function loadData() {
   updateBottle();
 }
 
-async function saveData(dateKey, amountMl) {
+async function saveData(dk, amountMl) {
   try {
     if (amountMl > 0) {
-      // Upsert (insert or update)
-      await sbFetch('/hydra_data', {
-        method: 'POST',
-        prefer: 'resolution=merge-duplicates',
-        headers: { 'Prefer': 'resolution=merge-duplicates' },
-        body: JSON.stringify({
-          user_id: USER_ID,
-          date_key: dateKey,
-          amount_ml: amountMl
-        })
-      });
-      data[dateKey] = amountMl;
+      await sbFetch('/hydra_data', 'POST',
+        { user_id: USER_ID, date_key: dk, amount_ml: amountMl },
+        { 'Prefer': 'resolution=merge-duplicates' }
+      );
+      data[dk] = amountMl;
     } else {
-      // Delete record if 0
-      await sbFetch(`/hydra_data?user_id=eq.${USER_ID}&date_key=eq.${dateKey}`, {
-        method: 'DELETE'
-      });
-      delete data[dateKey];
+      await sbFetch(`/hydra_data?user_id=eq.${USER_ID}&date_key=eq.${dk}`, 'DELETE');
+      delete data[dk];
     }
   } catch(e) {
     console.error('Save failed:', e);
@@ -915,3 +904,4 @@ init();
 </script>
 </body>
 </html>
+
