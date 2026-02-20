@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hydra — Water Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a1628;
+    --surface: #0f2044;
+    --card: #152952;
+    --water: #38bdf8;
+    --water-dark: #0ea5e9;
+    --water-glow: rgba(56,189,248,0.25);
+    --accent: #7dd3fc;
+    --text: #e0f2fe;
+    --muted: #64748b;
+    --border: rgba(56,189,248,0.15);
+    --success: #34d399;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(14,165,233,0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 40% at 80% 80%, rgba(56,189,248,0.06) 0%, transparent 60%);
+    pointer-events:none;
+    z-index:0;
+  }
+
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 32px;
+    background: rgba(10,22,40,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: var(--water);
+    margin-right: auto;
+    letter-spacing: -0.5px;
+  }
+  .nav-btn {
+    padding: 8px 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 100px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    transition: all 0.25s;
+  }
+  .nav-btn:hover { color: var(--water); border-color: var(--water); }
+  .nav-btn.active { background: var(--water); color: var(--bg); border-color: var(--water); font-weight: 500; }
+
+  .page { display: none; position: relative; z-index:1; }
+  .page.active { display: block; }
+
+  /* ===== PAGE 1: BOTTLE ===== */
+  #page-bottle {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 60px;
+    min-height: calc(100vh - 65px);
+  }
+  #page-bottle.active { display: flex; }
+
+  .bottle-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .bottle-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .bottle-header p { color: var(--muted); font-size: 0.9rem; }
+
+  .bottle-area {
+    display: flex;
+    gap: 60px;
+    align-items: flex-end;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .bottle-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .bottle-svg-wrap {
+    position: relative;
+    width: 140px;
+    height: 420px;
+    cursor: pointer;
+  }
+
+  /* SVG bottle */
+  .bottle-container {
+    position: absolute;
+    inset: 0;
+  }
+
+  .water-fill {
+    transition: height 0.6s cubic-bezier(0.34,1.56,0.64,1), y 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .amount-display {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    color: var(--water);
+    text-align: center;
+    line-height: 1;
+  }
+  .amount-display span { font-size: 1rem; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .ml-btn {
+    width: 90px;
+    padding: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .ml-btn:hover { background: var(--water); color: var(--bg); border-color: var(--water); transform: translateX(4px); }
+  .ml-btn.add { border-color: rgba(56,189,248,0.4); }
+
+  .bottle-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .action-btn {
+    padding: 10px 24px;
+    border-radius: 100px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  .btn-save { background: var(--water); color: var(--bg); }
+  .btn-save:hover { background: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px var(--water-glow); }
+  .btn-reset { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-reset:hover { color: #f87171; border-color: #f87171; }
+
+  .saved-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--success);
+    color: #022c22;
+    padding: 12px 28px;
+    border-radius: 100px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999;
+  }
+  .saved-toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ===== PAGE 2: CALENDAR ===== */
+  #page-calendar {
+    display: none;
+    padding: 40px 20px 60px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  #page-calendar.active { display: block; }
+
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+  .cal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: var(--text);
+  }
+  .cal-nav { display: flex; gap: 8px; }
+  .cal-nav-btn {
+    width: 40px; height: 40px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.2s;
+  }
+  .cal-nav-btn:hover { background: var(--water); color: var(--bg); }
+
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .cal-weekday {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 500;
+    padding: 8px 0;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+
+  .cal-day {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    background: var(--card);
+    position: relative;
+    overflow: hidden;
+  }
+  .cal-day::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, var(--water), transparent);
+    opacity: 0.3;
+    height: 0%;
+    transition: height 0.4s;
+  }
+  .cal-day.has-data::before { height: var(--fill-pct); }
+  .cal-day:hover { border-color: var(--water); transform: scale(1.05); }
+  .cal-day.empty { background: transparent; cursor: default; border: none; }
+  .cal-day.empty:hover { transform: none; }
+  .cal-day.today { border-color: var(--water); box-shadow: 0 0 16px var(--water-glow); }
+  .cal-day.selected { border-color: var(--water); background: rgba(56,189,248,0.15); }
+
+  .day-num {
+    font-size: 0.95rem;
+    font-weight: 500;
+    z-index: 1;
+    color: var(--text);
+  }
+  .day-ml {
+    font-size: 0.65rem;
+    color: var(--water);
+    z-index: 1;
+    margin-top: 2px;
+  }
+
+  .day-detail {
+    margin-top: 28px;
+    padding: 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    display: none;
+    animation: slideUp 0.3s ease;
+  }
+  .day-detail.show { display: block; }
+  @keyframes slideUp {
+    from { opacity:0; transform: translateY(12px); }
+    to { opacity:1; transform: translateY(0); }
+  }
+  .detail-date {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+    color: var(--accent);
+  }
+  .detail-amount {
+    font-size: 3rem;
+    font-family: 'Playfair Display', serif;
+    color: var(--water);
+    line-height: 1;
+  }
+  .detail-amount span { font-size: 1rem; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+  .detail-bar {
+    margin-top: 16px;
+    height: 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+  .detail-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--water-dark), var(--water));
+    transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .detail-note { margin-top: 10px; font-size: 0.82rem; color: var(--muted); }
+
+  /* ===== PAGE 3: STATISTICS ===== */
+  #page-stats {
+    display: none;
+    padding: 40px 20px 60px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  #page-stats.active { display: block; }
+
+  .stats-header {
+    margin-bottom: 36px;
+  }
+  .stats-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    margin-bottom: 6px;
+  }
+  .stats-header p { color: var(--muted); }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .chart-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    margin-bottom: 24px;
+    color: var(--accent);
+  }
+
+  canvas {
+    width: 100% !important;
+    max-height: 320px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+  }
+  .stat-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .stat-value { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--water); line-height: 1; }
+  .stat-value span { font-family: 'DM Sans', sans-serif; font-size: 0.85rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">💧 Hydra</div>
+  <button class="nav-btn active" onclick="showPage('bottle',this)">Today</button>
+  <button class="nav-btn" onclick="showPage('calendar',this)">Calendar</button>
+  <button class="nav-btn" onclick="showPage('stats',this)">Statistics</button>
+</nav>
+
+<!-- PAGE 1: BOTTLE -->
+<div id="page-bottle" class="page active">
+  <div class="bottle-header">
+    <h1>Daily Hydration</h1>
+    <p id="today-date"></p>
+  </div>
+
+  <div class="bottle-area">
+    <!-- Quick add buttons -->
+    <div class="controls" style="align-items:flex-end;">
+      <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Add Water</div>
+      <button class="ml-btn add" onclick="addWater(100)">+ 100 ml</button>
+      <button class="ml-btn add" onclick="addWater(200)">+ 200 ml</button>
+      <button class="ml-btn add" onclick="addWater(250)">+ 250 ml</button>
+      <button class="ml-btn add" onclick="addWater(330)">+ 330 ml</button>
+      <button class="ml-btn add" onclick="addWater(500)">+ 500 ml</button>
+    </div>
+
+    <!-- Bottle -->
+    <div class="bottle-wrap">
+      <div class="bottle-svg-wrap">
+        <svg id="bottle-svg" viewBox="0 0 140 420" width="140" height="420" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="waterGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#0ea5e9"/>
+              <stop offset="100%" stop-color="#38bdf8"/>
+            </linearGradient>
+            <linearGradient id="bottleGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="rgba(56,189,248,0.12)"/>
+              <stop offset="40%" stop-color="rgba(56,189,248,0.06)"/>
+              <stop offset="100%" stop-color="rgba(56,189,248,0.18)"/>
+            </linearGradient>
+            <clipPath id="bottleClip">
+              <path d="M52,40 Q52,20 60,15 L80,15 Q88,20 88,40 L100,80 Q110,95 110,110 L110,370 Q110,390 88,395 L52,395 Q30,390 30,370 L30,110 Q30,95 40,80 Z"/>
+            </clipPath>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- Bottle body glass effect -->
+          <path d="M52,40 Q52,20 60,15 L80,15 Q88,20 88,40 L100,80 Q110,95 110,110 L110,370 Q110,390 88,395 L52,395 Q30,390 30,370 L30,110 Q30,95 40,80 Z"
+                fill="url(#bottleGrad)" stroke="rgba(56,189,248,0.35)" stroke-width="1.5"/>
+
+          <!-- Water fill (clipped) -->
+          <g clip-path="url(#bottleClip)">
+            <rect id="water-rect" x="28" y="395" width="86" height="0" fill="url(#waterGrad)" opacity="0.85"/>
+            <!-- Wave on top of water -->
+            <path id="wave-path" d="" fill="rgba(56,189,248,0.5)"/>
+          </g>
+
+          <!-- Measurement lines -->
+          <g id="measure-lines"></g>
+
+          <!-- Shine -->
+          <path d="M42,100 Q40,200 42,300" stroke="rgba(255,255,255,0.12)" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M50,110 Q48,180 50,250" stroke="rgba(255,255,255,0.06)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="amount-display" id="amount-display">0 <span>ml</span></div>
+    </div>
+
+    <!-- Remove buttons -->
+    <div class="controls">
+      <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Remove</div>
+      <button class="ml-btn" onclick="addWater(-100)">− 100 ml</button>
+      <button class="ml-btn" onclick="addWater(-200)">− 200 ml</button>
+      <button class="ml-btn" onclick="addWater(-250)">− 250 ml</button>
+      <button class="ml-btn" onclick="addWater(-330)">− 330 ml</button>
+      <button class="ml-btn" onclick="addWater(-500)">− 500 ml</button>
+    </div>
+  </div>
+
+  <div class="bottle-actions" style="margin-top:32px;">
+    <button class="action-btn btn-save" onclick="saveToday()">Save Today</button>
+    <button class="action-btn btn-reset" onclick="resetToday()">Reset</button>
+  </div>
+</div>
+
+<!-- PAGE 2: CALENDAR -->
+<div id="page-calendar" class="page">
+  <div class="cal-header">
+    <div class="cal-title" id="cal-month-title"></div>
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+      <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+    </div>
+  </div>
+  <div class="cal-weekdays">
+    <div class="cal-weekday">Sun</div>
+    <div class="cal-weekday">Mon</div>
+    <div class="cal-weekday">Tue</div>
+    <div class="cal-weekday">Wed</div>
+    <div class="cal-weekday">Thu</div>
+    <div class="cal-weekday">Fri</div>
+    <div class="cal-weekday">Sat</div>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+  <div class="day-detail" id="day-detail">
+    <div class="detail-date" id="detail-date"></div>
+    <div class="detail-amount" id="detail-amount">0 <span>ml</span></div>
+    <div class="detail-bar"><div class="detail-bar-fill" id="detail-bar-fill"></div></div>
+    <div class="detail-note" id="detail-note"></div>
+  </div>
+</div>
+
+<!-- PAGE 3: STATS -->
+<div id="page-stats" class="page">
+  <div class="stats-header">
+    <h1>Statistics</h1>
+    <p>Your hydration journey over time</p>
+  </div>
+
+  <div class="stats-grid" id="stats-summary"></div>
+
+  <div class="chart-card">
+    <div class="chart-title">Daily Average by Month (ml)</div>
+    <canvas id="monthChart"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">This Month — Daily Intake (ml)</div>
+    <canvas id="dailyChart"></canvas>
+  </div>
+</div>
+
+<div class="saved-toast" id="toast">✓ Saved!</div>
+
+<script>
+// ===== SUPABASE CONFIG =====
+const SUPABASE_URL = 'https://luttsqkusdujdapghblv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_YYGGJoppLXjUH1TL-e0hWg_RfxQnKnX';
+const USER_ID = 'anonymous'; // change to actual user auth id if you add auth later
+
+async function sbFetch(path, options = {}) {
+  const url = `${SUPABASE_URL}/rest/v1${path}`;
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': options.prefer || '',
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Supabase error: ${res.status} ${err}`);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ===== DATA =====
+const GOAL = 3000;
+let data = {};
+let currentWater = 0;
+let calYear = 2026, calMonth = 1; // Feb 2026 (0-indexed)
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function dateKey(y, m, d) {
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+async function loadData() {
+  try {
+    const rows = await sbFetch(`/hydra_data?user_id=eq.${USER_ID}&select=date_key,amount_ml`);
+    data = {};
+    if (rows) {
+      rows.forEach(row => {
+        data[row.date_key] = row.amount_ml;
+      });
+    }
+  } catch(e) {
+    console.warn('Could not load from Supabase, using empty data:', e);
+    data = {};
+  }
+  const tk = todayKey();
+  currentWater = data[tk] || 0;
+  updateBottle();
+}
+
+async function saveData(dateKey, amountMl) {
+  try {
+    if (amountMl > 0) {
+      // Upsert (insert or update)
+      await sbFetch('/hydra_data', {
+        method: 'POST',
+        prefer: 'resolution=merge-duplicates',
+        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify({
+          user_id: USER_ID,
+          date_key: dateKey,
+          amount_ml: amountMl
+        })
+      });
+      data[dateKey] = amountMl;
+    } else {
+      // Delete record if 0
+      await sbFetch(`/hydra_data?user_id=eq.${USER_ID}&date_key=eq.${dateKey}`, {
+        method: 'DELETE'
+      });
+      delete data[dateKey];
+    }
+  } catch(e) {
+    console.error('Save failed:', e);
+    throw e;
+  }
+}
+
+// ===== BOTTLE =====
+const BOTTLE_TOP = 95;
+const BOTTLE_BOT = 395;
+const BOTTLE_H = BOTTLE_BOT - BOTTLE_TOP;
+
+function buildMeasureLines() {
+  const g = document.getElementById('measure-lines');
+  g.innerHTML = '';
+  const steps = 30;
+  for (let i = 0; i <= steps; i++) {
+    const frac = i / steps;
+    const y = BOTTLE_BOT - frac * BOTTLE_H;
+    const ml = i * 100;
+    const isMain = ml % 500 === 0;
+    const isMid = ml % 100 === 0;
+    const x1 = isMain ? 35 : (isMid ? 38 : 40);
+    const x2 = isMain ? 105 : (isMid ? 102 : 100);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x1); line.setAttribute('x2', x2);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke', isMain ? 'rgba(56,189,248,0.5)' : 'rgba(56,189,248,0.2)');
+    line.setAttribute('stroke-width', isMain ? '1.5' : '0.8');
+    g.appendChild(line);
+    if (isMain && ml > 0) {
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x', '116'); txt.setAttribute('y', y + 4);
+      txt.setAttribute('font-size','9'); txt.setAttribute('fill','rgba(56,189,248,0.6)');
+      txt.setAttribute('font-family','DM Sans,sans-serif');
+      txt.textContent = ml + 'ml';
+      g.appendChild(txt);
+    }
+  }
+}
+
+function updateBottle() {
+  const pct = Math.min(currentWater / GOAL, 1);
+  const fillH = pct * BOTTLE_H;
+  const rect = document.getElementById('water-rect');
+  const newY = BOTTLE_BOT - fillH;
+  rect.setAttribute('y', newY);
+  rect.setAttribute('height', fillH);
+
+  const wave = document.getElementById('wave-path');
+  if (pct > 0) {
+    const wy = newY;
+    wave.setAttribute('d', `M28,${wy+6} Q55,${wy-4} 70,${wy+2} Q100,${wy+8} 114,${wy+2} L114,${wy} L28,${wy} Z`);
+  } else {
+    wave.setAttribute('d','');
+  }
+
+  document.getElementById('amount-display').innerHTML = `${currentWater} <span>ml</span>`;
+}
+
+function addWater(ml) {
+  currentWater = Math.max(0, Math.min(GOAL, currentWater + ml));
+  updateBottle();
+}
+
+function resetToday() {
+  currentWater = 0;
+  updateBottle();
+}
+
+async function saveToday() {
+  const tk = todayKey();
+  const saveBtn = document.querySelector('.btn-save');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+  try {
+    await saveData(tk, currentWater);
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  } catch(e) {
+    alert('Failed to save. Check your Supabase connection.');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Today';
+  }
+}
+
+// ===== CALENDAR =====
+const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function renderCalendar() {
+  document.getElementById('cal-month-title').textContent = `${monthNames[calMonth]} ${calYear}`;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  document.getElementById('day-detail').classList.remove('show');
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const today = new Date();
+
+  for (let i = 0; i < firstDay; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = dateKey(calYear, calMonth, d);
+    const ml = data[key] || 0;
+    const el = document.createElement('div');
+    el.className = 'cal-day';
+    if (ml > 0) {
+      el.classList.add('has-data');
+      const pct = Math.round(Math.min(ml/GOAL, 1)*100);
+      el.style.setProperty('--fill-pct', pct+'%');
+    }
+    if (today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === d)
+      el.classList.add('today');
+
+    el.innerHTML = `<div class="day-num">${d}</div>${ml > 0 ? `<div class="day-ml">${ml}ml</div>` : ''}`;
+    el.onclick = () => showDayDetail(d, key, ml, el);
+    grid.appendChild(el);
+  }
+}
+
+function showDayDetail(d, key, ml, el) {
+  document.querySelectorAll('.cal-day.selected').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  const detail = document.getElementById('day-detail');
+  detail.classList.add('show');
+  document.getElementById('detail-date').textContent = `${monthNames[calMonth]} ${d}, ${calYear}`;
+  document.getElementById('detail-amount').innerHTML = `${ml} <span>ml</span>`;
+  const pct = Math.min(ml/GOAL*100,100);
+  document.getElementById('detail-bar-fill').style.width = pct+'%';
+  const note = ml === 0 ? 'No data recorded' : ml >= GOAL ? '🎉 Goal reached!' : `${Math.round(pct)}% of daily goal (${GOAL}ml)`;
+  document.getElementById('detail-note').textContent = note;
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calYear < 2026 || (calYear === 2026 && calMonth < 1)) { calYear = 2026; calMonth = 1; }
+  renderCalendar();
+}
+
+// ===== STATS =====
+let monthChartInstance = null, dailyChartInstance = null;
+
+function renderStats() {
+  const today = new Date();
+  const allVals = Object.values(data).filter(v => v > 0);
+  const avg = allVals.length ? Math.round(allVals.reduce((a,b) => a+b, 0) / allVals.length) : 0;
+  const best = allVals.length ? Math.max(...allVals) : 0;
+  const daysGoal = allVals.filter(v => v >= GOAL).length;
+
+  document.getElementById('stats-summary').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Days Tracked</div><div class="stat-value">${allVals.length} <span>days</span></div></div>
+    <div class="stat-card"><div class="stat-label">Daily Average</div><div class="stat-value">${avg} <span>ml</span></div></div>
+    <div class="stat-card"><div class="stat-label">Best Day</div><div class="stat-value">${best} <span>ml</span></div></div>
+    <div class="stat-card"><div class="stat-label">Goal Days</div><div class="stat-value">${daysGoal} <span>days</span></div></div>
+  `;
+
+  const months = [];
+  const monthAvgs = [];
+  const now = new Date();
+  let y = 2026, m = 1;
+  while (y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth())) {
+    const days = new Date(y, m+1, 0).getDate();
+    const vals = [];
+    for (let d = 1; d <= days; d++) {
+      const v = data[dateKey(y, m, d)];
+      if (v) vals.push(v);
+    }
+    months.push(`${monthNames[m].slice(0,3)} ${y}`);
+    monthAvgs.push(vals.length ? Math.round(vals.reduce((a,b) => a+b,0)/vals.length) : 0);
+    m++;
+    if (m > 11) { m = 0; y++; }
+  }
+
+  const curMonth = now.getMonth(), curYear = now.getFullYear();
+  const daysNow = new Date(curYear, curMonth+1, 0).getDate();
+  const dailyLabels = [], dailyVals = [];
+  for (let d = 1; d <= daysNow; d++) {
+    dailyLabels.push(d);
+    dailyVals.push(data[dateKey(curYear, curMonth, d)] || 0);
+  }
+
+  if (monthChartInstance) monthChartInstance.destroy();
+  const mCtx = document.getElementById('monthChart').getContext('2d');
+  const mGrad = mCtx.createLinearGradient(0,0,0,300);
+  mGrad.addColorStop(0,'rgba(56,189,248,0.3)');
+  mGrad.addColorStop(1,'rgba(56,189,248,0)');
+  monthChartInstance = new Chart(mCtx, {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [{
+        label: 'Avg ml',
+        data: monthAvgs,
+        borderColor: '#38bdf8',
+        backgroundColor: mGrad,
+        pointBackgroundColor: '#38bdf8',
+        pointRadius: 5,
+        tension: 0.4,
+        fill: true,
+        borderWidth: 2.5,
+      }]
+    },
+    options: chartOptions('Average ml per day')
+  });
+
+  if (dailyChartInstance) dailyChartInstance.destroy();
+  const dCtx = document.getElementById('dailyChart').getContext('2d');
+  const dGrad = dCtx.createLinearGradient(0,0,0,280);
+  dGrad.addColorStop(0,'rgba(56,189,248,0.25)');
+  dGrad.addColorStop(1,'rgba(56,189,248,0)');
+  dailyChartInstance = new Chart(dCtx, {
+    type: 'line',
+    data: {
+      labels: dailyLabels,
+      datasets: [{
+        label: 'ml',
+        data: dailyVals,
+        borderColor: '#7dd3fc',
+        backgroundColor: dGrad,
+        pointBackgroundColor: '#7dd3fc',
+        pointRadius: 4,
+        tension: 0.4,
+        fill: true,
+        borderWidth: 2,
+      }, {
+        label: 'Goal',
+        data: dailyLabels.map(() => GOAL),
+        borderColor: 'rgba(52,211,153,0.4)',
+        borderDash: [6,4],
+        pointRadius: 0,
+        fill: false,
+        borderWidth: 1.5,
+      }]
+    },
+    options: chartOptions('ml consumed')
+  });
+}
+
+function chartOptions(yLabel) {
+  return {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#152952',
+        borderColor: 'rgba(56,189,248,0.3)',
+        borderWidth: 1,
+        titleColor: '#38bdf8',
+        bodyColor: '#e0f2fe',
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(56,189,248,0.07)' },
+        ticks: { color: '#64748b', font: { family: 'DM Sans' } },
+        border: { color: 'rgba(56,189,248,0.15)' }
+      },
+      y: {
+        grid: { color: 'rgba(56,189,248,0.07)' },
+        ticks: { color: '#64748b', font: { family: 'DM Sans' } },
+        border: { color: 'rgba(56,189,248,0.15)' },
+        title: { display: false }
+      }
+    }
+  };
+}
+
+// ===== NAVIGATION =====
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'calendar') renderCalendar();
+  if (name === 'stats') renderStats();
+}
+
+// ===== INIT =====
+function init() {
+  const d = new Date();
+  document.getElementById('today-date').textContent =
+    d.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  buildMeasureLines();
+
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+  document.head.appendChild(script);
+
+  loadData().then(() => {
+    renderCalendar();
+  });
+}
+
+init();
+</script>
+</body>
+</html>
